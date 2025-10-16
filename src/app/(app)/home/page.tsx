@@ -1,6 +1,6 @@
 'use client';
 
-import { UserPlus } from 'lucide-react';
+import { MessageSquare, UserPlus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,7 @@ import AddFriendPopup from '@/components/friends/add-friend-popup';
 import ChatView from '@/components/chat/chat-view';
 import { AnimatePresence, motion } from 'framer-motion';
 
-const mockFriends: ChatFriend[] = [
-  { uid: '1', displayName: 'Alice', avatarUrl: 'https://picsum.photos/seed/friend1/200', online: true, lastMessage: "Hey, what's up?", lastMessageTimestamp: Date.now() - 1000 * 60 * 5 },
-  { uid: '2', displayName: 'Bob', avatarUrl: 'https://picsum.photos/seed/friend2/200', online: false, lastMessage: 'See you tomorrow!', lastMessageTimestamp: Date.now() - 1000 * 60 * 60 * 2 },
-  { uid: '3', displayName: 'Charlie', avatarUrl: 'https://picsum.photos/seed/friend3/200', online: true, lastMessage: 'Sounds good!', lastMessageTimestamp: Date.now() - 1000 * 60 * 30 },
-];
+const mockFriends: ChatFriend[] = [];
 
 export default function HomePage() {
   const [isAddFriendOpen, setAddFriendOpen] = useState(false);
@@ -22,30 +18,39 @@ export default function HomePage() {
 
   return (
     <div className="relative h-full">
-      <div className="p-4 space-y-2">
-        {mockFriends.map((friend) => (
-          <Card key={friend.uid} className="cursor-pointer hover:bg-secondary transition-colors" onClick={() => setSelectedChat(friend)}>
-            <CardContent className="p-3 flex items-center gap-4">
-              <div className="relative">
-                <Avatar className="h-14 w-14 border-2 border-primary/20">
-                  <AvatarImage src={friend.avatarUrl || ''} />
-                  <AvatarFallback>{friend.displayName?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                {friend.online && <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-card" />}
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold">{friend.displayName}</h3>
-                  <p className="text-xs text-muted-foreground shrink-0">
-                    {new Date(friend.lastMessageTimestamp || 0).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+       {mockFriends.length > 0 ? (
+        <div className="p-4 space-y-2">
+            {mockFriends.map((friend) => (
+            <Card key={friend.uid} className="cursor-pointer hover:bg-secondary transition-colors" onClick={() => setSelectedChat(friend)}>
+                <CardContent className="p-3 flex items-center gap-4">
+                <div className="relative">
+                    <Avatar className="h-14 w-14 border-2 border-primary/20">
+                    <AvatarImage src={friend.avatarUrl || ''} />
+                    <AvatarFallback>{friend.displayName?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {friend.online && <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-card" />}
                 </div>
-                <p className="text-sm text-muted-foreground truncate">{friend.lastMessage}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="flex-1 overflow-hidden">
+                    <div className="flex justify-between items-start">
+                    <h3 className="font-semibold">{friend.displayName}</h3>
+                    <p className="text-xs text-muted-foreground shrink-0">
+                        {new Date(friend.lastMessageTimestamp || 0).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{friend.lastMessage}</p>
+                </div>
+                </CardContent>
+            </Card>
+            ))}
+        </div>
+        ) : (
+        <div className="flex flex-col items-center justify-center text-center text-muted-foreground mt-20 h-full">
+            <MessageSquare className="h-16 w-16 mb-4"/>
+            <h2 className="text-xl font-semibold">No chats yet</h2>
+            <p className="max-w-xs">Your conversations with friends will appear here once you connect.</p>
+        </div>
+        )}
+
 
       <Button
         onClick={() => setAddFriendOpen(true)}
