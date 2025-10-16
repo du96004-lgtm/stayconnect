@@ -6,8 +6,10 @@ import { Phone, Video, ArrowUpRight, ArrowDownLeft, PhoneCall } from "lucide-rea
 import type { Call } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-const mockCalls: Call[] = [];
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/auth-context";
+import { db } from "@/lib/firebase";
+import { ref, onValue, off } from "firebase/database";
 
 const CallStatusIcon = ({ status }: { status: Call['status']}) => {
     const isMissedOrRejected = status === 'missed' || status === 'rejected';
@@ -21,11 +23,33 @@ const CallStatusIcon = ({ status }: { status: Call['status']}) => {
 };
 
 export default function CallsPage() {
+    const { appUser } = useAuth();
+    const [callHistory, setCallHistory] = useState<Call[]>([]);
+
+    useEffect(() => {
+        if (!appUser) return;
+
+        const historyRef = ref(db, `callHistory/${appUser.uid}`);
+        const listener = onValue(historyRef, (snapshot) => {
+            if(snapshot.exists()) {
+                const historyData = snapshot.val();
+                const historyList: Call[] = Object.values(historyData);
+                historyList.sort((a,b) => b.date - a.date);
+                setCallHistory(historyList);
+            } else {
+                setCallHistory([]);
+            }
+        });
+
+        return () => off(historyRef, 'value', listener);
+
+    }, [appUser]);
+
     return (
         <div className="p-4">
-             {mockCalls.length > 0 ? (
+             {callHistory.length > 0 ? (
                 <div className="space-y-3">
-                    {mockCalls.map((call) => (
+                    {callHistory.map((call) => (
                         <Card key={call.id}>
                             <CardContent className="p-3 flex items-center gap-4">
                                 <Avatar className="h-12 w-12">

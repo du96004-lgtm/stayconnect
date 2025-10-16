@@ -11,9 +11,13 @@ import { useAuth } from "@/context/auth-context";
 import { useEffect, useRef, useState } from "react";
 import { db } from "@/lib/firebase";
 import { ref, onValue, off, push, serverTimestamp, set } from "firebase/database";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ChatView({ friend, onClose }: { friend: ChatFriend; onClose: () => void; }) {
     const { appUser } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -91,6 +95,53 @@ export default function ChatView({ friend, onClose }: { friend: ChatFriend; onCl
 
         setNewMessage('');
     };
+    
+    const handleCall = (type: 'audio' | 'video') => {
+        if (!appUser) return;
+    
+        const callId = push(ref(db, 'calls')).key;
+        if (!callId) return;
+    
+        const callData = {
+            id: callId,
+            type,
+            caller: {
+                uid: appUser.uid,
+                displayName: appUser.displayName,
+                avatarUrl: appUser.avatarUrl,
+            },
+            recipient: {
+                uid: friend.uid,
+                displayName: friend.displayName,
+                avatarUrl: friend.avatarUrl,
+            },
+            status: 'initiating',
+            createdAt: serverTimestamp(),
+        };
+    
+        set(ref(db, `calls/${callId}`), callData);
+    
+        // Add to call history for both users
+        const callHistoryEntry = {
+            id: callId,
+            contactName: friend.displayName,
+            contactAvatar: friend.avatarUrl,
+            date: Date.now(),
+            type: type,
+            status: 'outgoing',
+        };
+        set(ref(db, `callHistory/${appUser.uid}/${callId}`), callHistoryEntry);
+        
+        const callHistoryForRecipient = {
+            ...callHistoryEntry,
+            contactName: appUser.displayName,
+            contactAvatar: appUser.avatarUrl,
+            status: 'missed', // Initially missed until answered
+        };
+        set(ref(db, `callHistory/${friend.uid}/${callId}`), callHistoryForRecipient);
+
+        router.push(`/call/${callId}`);
+      };
 
     return (
         <div className="h-full flex flex-col bg-background">
@@ -109,8 +160,8 @@ export default function ChatView({ friend, onClose }: { friend: ChatFriend; onCl
                     </div>
                 </div>
                 <div className="ml-auto flex items-center">
-                    <Button variant="ghost" size="icon"><Phone className="h-5 w-5" /></Button>
-                    <Button variant="ghost" size="icon"><Video className="h-5 w-5" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleCall('audio')}><Phone className="h-5 w-5" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleCall('video')}><Video className="h-5 w-5" /></Button>
                 </div>
             </header>
 
