@@ -42,7 +42,7 @@ export default function CallPage() {
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 setCallDetails(data);
-                if (data.status === 'ended' || data.status === 'rejected') {
+                if ((data.status === 'ended' || data.status === 'rejected' || data.status === 'missed') && data.status !== callDetails?.status) {
                     toast({
                         title: `Call ${data.status}`,
                         description: `The call has been ${data.status}.`,
@@ -60,10 +60,10 @@ export default function CallPage() {
         });
 
         return () => off(callRef, 'value', listener);
-    }, [callId, appUser, router, toast]);
+    }, [callId, appUser, router, toast, callDetails?.status]);
 
     useEffect(() => {
-        if (callDetails?.type !== 'video') return;
+        if (callDetails?.type !== 'video' || callDetails.status !== 'connected') return;
 
         const getCameraPermission = async () => {
           try {
@@ -87,12 +87,28 @@ export default function CallPage() {
                 stream.getTracks().forEach(track => track.stop());
             }
         }
-    }, [callDetails?.type]);
+    }, [callDetails?.type, callDetails?.status]);
 
     const handleEndCall = () => {
-        if (callId) {
-            update(ref(db, `calls/${callId}`), { status: 'ended' });
-            update(ref(db, `callHistory/${appUser?.uid}/${callId}`), { status: 'outgoing' });
+        if (callId && appUser) {
+            let newStatus: CallDetails['status'] = 'ended';
+            if (callDetails?.status === 'ringing' || callDetails?.status === 'initiating') {
+                newStatus = callDetails.caller.uid === appUser.uid ? 'ended' : 'missed';
+            }
+
+            update(ref(db, `calls/${callId}`), { status: newStatus });
+            
+            // update caller history
+            if(callDetails?.caller.uid) {
+                const historyRef = ref(db, `callHistory/${callDetails?.caller.uid}/${callId}`);
+                update(historyRef, { status: callDetails?.caller.uid === appUser.uid ? 'outgoing' : 'missed' });
+            }
+
+            // update recipient history
+            if(callDetails?.recipient.uid) {
+                const historyRef = ref(db, `callHistory/${callDetails?.recipient.uid}/${callId}`);
+                update(historyRef, { status: newStatus === 'missed' ? 'missed' : 'answered' });
+            }
         }
     };
     
@@ -104,8 +120,8 @@ export default function CallPage() {
 
     return (
         <div className="h-screen w-full flex flex-col bg-gray-900 text-white relative">
-            {callDetails.type === 'video' ? (
-                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
+            {(callDetails.type === 'video' && callDetails.status === 'connected') ? (
+                 <video ref={videoRef} className="w-full h-full object-cover" autoPlay />
             ): (
                 <div className="flex-1 flex flex-col items-center justify-center bg-gray-800">
                     <Avatar className="h-40 w-40 border-4 border-gray-600">
@@ -117,7 +133,7 @@ export default function CallPage() {
                 </div>
             )}
             
-            {!hasCameraPermission && callDetails.type === 'video' && (
+            {!hasCameraPermission && callDetails.type === 'video' && callDetails.status === 'connected' && (
                 <div className="absolute top-4 left-4 right-4">
                     <Alert variant="destructive">
                       <AlertTitle>Camera Access Required</AlertTitle>
