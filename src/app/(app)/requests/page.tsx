@@ -4,18 +4,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { FriendRequest } from "@/lib/types";
 import { Users } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
-const mockRequests: FriendRequest[] = [
+const initialMockRequests: FriendRequest[] = [
     { uid: '4', displayName: 'Diana', avatarUrl: 'https://picsum.photos/seed/request1/200' },
     { uid: '5', displayName: 'Eve', avatarUrl: 'https://picsum.photos/seed/request2/200' },
 ];
 
 export default function RequestsPage() {
+    const [requests, setRequests] = useState<FriendRequest[]>(initialMockRequests);
+    const { toast } = useToast();
+
+    const handleRequest = (requestId: string, accepted: boolean) => {
+        const request = requests.find(r => r.uid === requestId);
+        if (!request) return;
+
+        // In a real app, you'd call your backend here.
+        setRequests(prevRequests => prevRequests.filter(r => r.uid !== requestId));
+
+        toast({
+            title: accepted ? "Friend Added!" : "Request Rejected",
+            description: accepted ? `You are now friends with ${request.displayName}.` : `You have rejected ${request.displayName}'s friend request.`,
+        });
+    };
+
     return (
         <div className="p-4">
-            {mockRequests.length > 0 ? (
+            {requests.length > 0 ? (
                 <div className="space-y-3">
-                    {mockRequests.map((req) => (
+                    {requests.map((req) => (
                         <Card key={req.uid} className="bg-card">
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -29,8 +47,8 @@ export default function RequestsPage() {
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button size="sm">Accept</Button>
-                                    <Button size="sm" variant="outline">Reject</Button>
+                                    <Button size="sm" onClick={() => handleRequest(req.uid, true)}>Accept</Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleRequest(req.uid, false)}>Reject</Button>
                                 </div>
                             </CardContent>
                         </Card>
