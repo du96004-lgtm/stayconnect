@@ -2,9 +2,10 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Video, PhoneMissed, ArrowUpRight, ArrowDownLeft, PhoneCall } from "lucide-react";
+import { Phone, Video, ArrowUpRight, ArrowDownLeft, PhoneCall } from "lucide-react";
 import type { Call } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const mockCalls: Call[] = [
     { id: 'call1', contactName: 'Alice', contactAvatar: 'https://picsum.photos/seed/call1/200', date: Date.now() - 1000 * 60 * 15, type: 'video', status: 'answered' },
