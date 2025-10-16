@@ -66,6 +66,7 @@ export default function AddFriendPopup({ isOpen, onOpenChange }: { isOpen: boole
                 uid: appUser.uid,
                 displayName: appUser.displayName,
                 avatarUrl: appUser.avatarUrl,
+                timestamp: Date.now(),
             };
 
             await set(ref(db, `friendRequests/${recipientUid}/${appUser.uid}`), requestData);
