@@ -1,6 +1,6 @@
 'use client';
 
-import type { ChatFriend, ChatMessage } from "@/lib/types";
+import type { ChatFriend, ChatMessage, AppUser } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { ArrowLeft, Phone, Send, Video } from "lucide-react";
@@ -10,7 +10,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { useAuth } from "@/context/auth-context";
 import { useEffect, useRef, useState } from "react";
 import { db } from "@/lib/firebase";
-import { ref, onValue, off, push, serverTimestamp, set } from "firebase/database";
+import { ref, onValue, off, push, serverTimestamp, set, get, child } from "firebase/database";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -64,35 +64,41 @@ export default function ChatView({ friend, onClose }: { friend: ChatFriend; onCl
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !appUser) return;
-
+    
         const chatId = getChatId(appUser.uid, friend.uid);
         const messagesRef = ref(db, `chats/${chatId}/messages`);
         const newMessageRef = push(messagesRef);
-
+    
         const messageData = {
             senderId: appUser.uid,
             text: newMessage,
             timestamp: serverTimestamp(),
         };
-
+    
         await set(newMessageRef, messageData);
-        
-        // Also update the last message for both users in their friends list
+    
         const lastMessageData = {
             lastMessage: newMessage,
             lastMessageTimestamp: serverTimestamp(),
-        }
+        };
+    
+        // Update my friend object
         const myFriendRef = ref(db, `friends/${appUser.uid}/${friend.uid}`);
-        const theirFriendRef = ref(db, `friends/${friend.uid}/${appUser.uid}`);
-        
         await set(myFriendRef, { ...friend, ...lastMessageData });
-        await set(theirFriendRef, { 
-            uid: appUser.uid,
-            displayName: appUser.displayName,
-            avatarUrl: appUser.avatarUrl,
-            ...lastMessageData,
-        });
-
+    
+        // Update their friend object (with my details)
+        const theirFriendRef = ref(db, `friends/${friend.uid}/${appUser.uid}`);
+        const userSnapshot = await get(child(ref(db), `users/${appUser.uid}`));
+        if(userSnapshot.exists()){
+            const meAsFriend = userSnapshot.val() as AppUser;
+            await set(theirFriendRef, {
+                uid: meAsFriend.uid,
+                displayName: meAsFriend.displayName,
+                avatarUrl: meAsFriend.avatarUrl,
+                ...lastMessageData,
+            });
+        }
+    
         setNewMessage('');
     };
     
