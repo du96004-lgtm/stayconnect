@@ -7,10 +7,7 @@ import { Users } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-const initialMockRequests: FriendRequest[] = [
-    { uid: '4', displayName: 'Diana', avatarUrl: 'https://picsum.photos/seed/request1/200' },
-    { uid: '5', displayName: 'Eve', avatarUrl: 'https://picsum.photos/seed/request2/200' },
-];
+const initialMockRequests: FriendRequest[] = [];
 
 export default function RequestsPage() {
     const [requests, setRequests] = useState<FriendRequest[]>(initialMockRequests);
