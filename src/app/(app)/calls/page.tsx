@@ -7,12 +7,7 @@ import type { Call } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const mockCalls: Call[] = [
-    { id: 'call1', contactName: 'Alice', contactAvatar: 'https://picsum.photos/seed/call1/200', date: Date.now() - 1000 * 60 * 15, type: 'video', status: 'answered' },
-    { id: 'call2', contactName: 'Bob', contactAvatar: 'https://picsum.photos/seed/call2/200', date: Date.now() - 1000 * 60 * 60 * 3, type: 'audio', status: 'missed' },
-    { id: 'call3', contactName: 'Alice', contactAvatar: 'https://picsum.photos/seed/call1/200', date: Date.now() - 1000 * 60 * 60 * 24, type: 'audio', status: 'outgoing' },
-    { id: 'call4', contactName: 'Charlie', contactAvatar: 'https://picsum.photos/seed/call3/200', date: Date.now() - 1000 * 60 * 60 * 48, type: 'video', status: 'rejected' },
-];
+const mockCalls: Call[] = [];
 
 const CallStatusIcon = ({ status }: { status: Call['status']}) => {
     const isMissedOrRejected = status === 'missed' || status === 'rejected';
