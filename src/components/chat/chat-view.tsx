@@ -10,7 +10,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { useAuth } from "@/context/auth-context";
 import { useEffect, useRef, useState } from "react";
 import { db } from "@/lib/firebase";
-import { ref, onValue, off, push, serverTimestamp, set, get, child } from "firebase/database";
+import { ref, onValue, off, push, serverTimestamp, set, get, child, update } from "firebase/database";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -84,20 +84,11 @@ export default function ChatView({ friend, onClose }: { friend: ChatFriend; onCl
     
         // Update my friend object
         const myFriendRef = ref(db, `friends/${appUser.uid}/${friend.uid}`);
-        await set(myFriendRef, { ...friend, ...lastMessageData });
+        await update(myFriendRef, lastMessageData);
     
         // Update their friend object (with my details)
         const theirFriendRef = ref(db, `friends/${friend.uid}/${appUser.uid}`);
-        const userSnapshot = await get(child(ref(db), `users/${appUser.uid}`));
-        if(userSnapshot.exists()){
-            const meAsFriend = userSnapshot.val() as AppUser;
-            await set(theirFriendRef, {
-                uid: meAsFriend.uid,
-                displayName: meAsFriend.displayName,
-                avatarUrl: meAsFriend.avatarUrl,
-                ...lastMessageData,
-            });
-        }
+        await update(theirFriendRef, lastMessageData);
     
         setNewMessage('');
     };
