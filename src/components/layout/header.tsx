@@ -12,7 +12,7 @@ const getTitle = (pathname: string) => {
   if (pathname.startsWith('/community')) return 'Community';
   if (pathname.startsWith('/calls')) return 'Calls';
   if (pathname.startsWith('/settings')) return 'Settings';
-  return 'StatConnect';
+  return 'StayConnect';
 };
 
 export default function Header() {

@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
            <div className="bg-primary text-primary-foreground p-4 rounded-full mb-4">
                 <MessageSquare className="h-10 w-10" />
             </div>
-          <h1 className="text-3xl font-bold text-primary">StatConnect</h1>
+          <h1 className="text-3xl font-bold text-primary">StayConnect</h1>
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>

@@ -27,8 +27,8 @@ export default function ProfilePopup({ isOpen, onOpenChange }: { isOpen: boolean
     if (appUser?.publicId) {
         if(navigator.share) {
             navigator.share({
-                title: 'StatConnect Profile',
-                text: `Add me on StatConnect! My ID is: ${appUser.publicId}`,
+                title: 'StayConnect Profile',
+                text: `Add me on StayConnect! My ID is: ${appUser.publicId}`,
             }).catch(console.error);
         } else {
             handleCopyId();
@@ -39,7 +39,7 @@ export default function ProfilePopup({ isOpen, onOpenChange }: { isOpen: boolean
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] p-0 gap-0">
-        <DialogHeader className='sr-only'>
+        <DialogHeader>
           <DialogTitle>User Profile</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center p-6 bg-secondary/30">
@@ -60,7 +60,7 @@ export default function ProfilePopup({ isOpen, onOpenChange }: { isOpen: boolean
         </div>
         <div className="p-6 flex flex-col items-center gap-4">
             <div className='p-2 bg-white rounded-lg shadow-md'>
-                <QRCode value={`statconnect_user_id:${appUser?.publicId}` || ''} size={128} />
+                <QRCode value={`stayconnect_user_id:${appUser?.publicId}` || ''} size={128} />
             </div>
             <p className='text-sm text-muted-foreground text-center'>Scan this code to add as a friend.</p>
         </div>

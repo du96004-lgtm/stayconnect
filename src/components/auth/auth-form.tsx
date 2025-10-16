@@ -127,7 +127,7 @@ export default function AuthForm({ type }: { type: 'login' | 'register' }) {
             <MessageSquare className="h-8 w-8" />
         </div>
         <CardTitle className="text-3xl font-bold">{isLogin ? 'Welcome Back!' : 'Create an Account'}</CardTitle>
-        <CardDescription>{isLogin ? 'Sign in to connect with your friends.' : 'Join StatConnect today.'}</CardDescription>
+        <CardDescription>{isLogin ? 'Sign in to connect with your friends.' : 'Join StayConnect today.'}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
