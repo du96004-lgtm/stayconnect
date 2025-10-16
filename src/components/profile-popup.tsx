@@ -2,7 +2,7 @@
 
 import React from 'react';
 import QRCode from 'qrcode.react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
@@ -39,6 +39,9 @@ export default function ProfilePopup({ isOpen, onOpenChange }: { isOpen: boolean
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] p-0 gap-0">
+        <DialogHeader className='sr-only'>
+          <DialogTitle>User Profile</DialogTitle>
+        </DialogHeader>
         <div className="flex flex-col items-center p-6 bg-secondary/30">
           <Avatar className="h-24 w-24 border-4 border-background shadow-md">
             <AvatarImage src={appUser?.avatarUrl || ''} alt={appUser?.displayName || 'User'} />
