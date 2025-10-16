@@ -8,28 +8,89 @@ import { Input } from "../ui/input";
 import MessageBubble from "./message-bubble";
 import { ScrollArea } from "../ui/scroll-area";
 import { useAuth } from "@/context/auth-context";
-import { useEffect, useRef } from "react";
-
-const mockMessages: ChatMessage[] = [
-    { id: '1', senderId: '1', text: "Hey, what's up?", timestamp: Date.now() - 1000 * 60 * 5 },
-    { id: '2', senderId: 'me', text: "Not much, just working on the project. You?", timestamp: Date.now() - 1000 * 60 * 4 },
-    { id: '3', senderId: '1', text: "Same here. It's coming along nicely.", timestamp: Date.now() - 1000 * 60 * 3 },
-    { id: '4', senderId: 'me', text: "Totally. Let's catch up later?", timestamp: Date.now() - 1000 * 60 * 2 },
-    { id: '5', senderId: '1', text: "Sounds good!", timestamp: Date.now() - 1000 * 60 * 1 },
-];
+import { useEffect, useRef, useState } from "react";
+import { db } from "@/lib/firebase";
+import { ref, onValue, off, push, serverTimestamp, set } from "firebase/database";
 
 export default function ChatView({ friend, onClose }: { friend: ChatFriend; onClose: () => void; }) {
     const { appUser } = useAuth();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    
-    // In a real app, 'me' would be appUser.uid
-    const myId = 'me';
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+
+    const getChatId = (uid1: string, uid2: string) => {
+        return [uid1, uid2].sort().join('_');
+    }
 
     useEffect(() => {
+        if (!appUser) return;
+
+        const chatId = getChatId(appUser.uid, friend.uid);
+        const messagesRef = ref(db, `chats/${chatId}/messages`);
+
+        const listener = onValue(messagesRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const messagesData = snapshot.val();
+                const messagesList: ChatMessage[] = Object.keys(messagesData).map(key => ({
+                    id: key,
+                    ...messagesData[key]
+                }));
+                messagesList.sort((a, b) => a.timestamp - b.timestamp);
+                setMessages(messagesList);
+            } else {
+                setMessages([]);
+            }
+        });
+
+        return () => {
+            off(messagesRef, 'value', listener);
+        };
+    }, [appUser, friend.uid]);
+    
+    useEffect(() => {
         if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+            setTimeout(() => {
+                const viewport = scrollAreaRef.current?.querySelector('div[data-radix-scroll-area-viewport]');
+                if (viewport) {
+                    viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+                }
+            }, 100)
         }
-    }, []);
+    }, [messages]);
+
+    const handleSendMessage = async () => {
+        if (!newMessage.trim() || !appUser) return;
+
+        const chatId = getChatId(appUser.uid, friend.uid);
+        const messagesRef = ref(db, `chats/${chatId}/messages`);
+        const newMessageRef = push(messagesRef);
+
+        const messageData = {
+            senderId: appUser.uid,
+            text: newMessage,
+            timestamp: serverTimestamp(),
+        };
+
+        await set(newMessageRef, messageData);
+        
+        // Also update the last message for both users in their friends list
+        const lastMessageData = {
+            lastMessage: newMessage,
+            lastMessageTimestamp: serverTimestamp(),
+        }
+        const myFriendRef = ref(db, `friends/${appUser.uid}/${friend.uid}`);
+        const theirFriendRef = ref(db, `friends/${friend.uid}/${appUser.uid}`);
+        
+        await set(myFriendRef, { ...friend, ...lastMessageData });
+        await set(theirFriendRef, { 
+            uid: appUser.uid,
+            displayName: appUser.displayName,
+            avatarUrl: appUser.avatarUrl,
+            ...lastMessageData,
+        });
+
+        setNewMessage('');
+    };
 
     return (
         <div className="h-full flex flex-col bg-background">
@@ -56,20 +117,29 @@ export default function ChatView({ friend, onClose }: { friend: ChatFriend; onCl
             <div className="flex-1 overflow-hidden">
                  <ScrollArea className="h-full" ref={scrollAreaRef}>
                     <div className="p-4 space-y-4">
-                        {mockMessages.map((msg) => (
-                            <MessageBubble key={msg.id} message={msg} isOwnMessage={msg.senderId === myId} />
-                        ))}
+                        {messages.length > 0 ? messages.map((msg) => (
+                            <MessageBubble key={msg.id} message={msg} isOwnMessage={msg.senderId === appUser?.uid} />
+                        )) : (
+                            <div className="text-center text-muted-foreground mt-10">
+                                <p>No messages yet. Start the conversation!</p>
+                            </div>
+                        )}
                     </div>
                 </ScrollArea>
             </div>
 
-            <div className="flex items-center gap-2 border-t p-2 bg-background sticky bottom-0">
-                <Input placeholder="Type a message..." className="flex-1" />
-                <Button className="bg-primary hover:bg-primary/90">
-                    <Send className="h-5 w-5 mr-2" />
-                    Send
+            <form className="flex items-center gap-2 border-t p-2 bg-background sticky bottom-0" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
+                <Input 
+                    placeholder="Type a message..." 
+                    className="flex-1"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                />
+                <Button type="submit" className="bg-primary hover:bg-primary/90">
+                    <Send className="h-5 w-5 md:mr-2" />
+                    <span className="hidden md:inline">Send</span>
                 </Button>
-            </div>
+            </form>
         </div>
     );
 }
