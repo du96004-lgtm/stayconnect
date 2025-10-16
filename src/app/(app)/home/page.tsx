@@ -5,22 +5,44 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import type { ChatFriend } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AddFriendPopup from '@/components/friends/add-friend-popup';
 import ChatView from '@/components/chat/chat-view';
 import { AnimatePresence, motion } from 'framer-motion';
-
-const mockFriends: ChatFriend[] = [];
+import { useAuth } from '@/context/auth-context';
+import { db } from '@/lib/firebase';
+import { ref, onValue, off } from 'firebase/database';
 
 export default function HomePage() {
   const [isAddFriendOpen, setAddFriendOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState<ChatFriend | null>(null);
+  const [friends, setFriends] = useState<ChatFriend[]>([]);
+  const { appUser } = useAuth();
+
+  useEffect(() => {
+    if (!appUser) return;
+
+    const friendsRef = ref(db, `friends/${appUser.uid}`);
+    const listener = onValue(friendsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const friendsData = snapshot.val();
+            const friendsList: ChatFriend[] = Object.values(friendsData);
+            setFriends(friendsList);
+        } else {
+            setFriends([]);
+        }
+    });
+
+    return () => {
+        off(friendsRef, 'value', listener);
+    };
+  }, [appUser]);
 
   return (
     <div className="relative h-full">
-       {mockFriends.length > 0 ? (
+       {friends.length > 0 ? (
         <div className="p-4 space-y-2">
-            {mockFriends.map((friend) => (
+            {friends.map((friend) => (
             <Card key={friend.uid} className="cursor-pointer hover:bg-secondary transition-colors" onClick={() => setSelectedChat(friend)}>
                 <CardContent className="p-3 flex items-center gap-4">
                 <div className="relative">
@@ -34,10 +56,10 @@ export default function HomePage() {
                     <div className="flex justify-between items-start">
                     <h3 className="font-semibold">{friend.displayName}</h3>
                     <p className="text-xs text-muted-foreground shrink-0">
-                        {new Date(friend.lastMessageTimestamp || 0).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     </p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{friend.lastMessage}</p>
+                    <p className="text-sm text-muted-foreground truncate">{friend.lastMessage || 'No messages yet'}</p>
                 </div>
                 </CardContent>
             </Card>
