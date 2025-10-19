@@ -18,7 +18,7 @@ type CallDetails = {
     type: 'audio' | 'video';
     caller: { uid: string; displayName: string; avatarUrl: string };
     recipient: { uid: string; displayName: string; avatarUrl: string };
-    status: 'initiating' | 'ringing' | 'connected' | 'ended' | 'rejected' | 'missed';
+    status: 'initiating' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'rejected' | 'missed';
 };
 
 export default function CallPage() {
@@ -63,7 +63,7 @@ export default function CallPage() {
     }, [callId, appUser, router, toast, callDetails?.status]);
 
     useEffect(() => {
-        if (callDetails?.type !== 'video' || callDetails.status !== 'connected') return;
+        if (callDetails?.type !== 'video' || (callDetails.status !== 'connected' && callDetails.status !== 'connecting')) return;
 
         const getCameraPermission = async () => {
           try {
@@ -92,7 +92,7 @@ export default function CallPage() {
     const handleEndCall = () => {
         if (callId && appUser) {
             let newStatus: CallDetails['status'] = 'ended';
-            if (callDetails?.status === 'ringing' || callDetails?.status === 'initiating') {
+            if (callDetails?.status === 'ringing' || callDetails?.status === 'initiating' || callDetails?.status === 'connecting') {
                 newStatus = callDetails.caller.uid === appUser.uid ? 'ended' : 'missed';
             }
 
@@ -120,7 +120,7 @@ export default function CallPage() {
 
     return (
         <div className="h-screen w-full flex flex-col bg-gray-900 text-white relative">
-            {(callDetails.type === 'video' && callDetails.status === 'connected') ? (
+            {(callDetails.type === 'video' && (callDetails.status === 'connected' || callDetails.status === 'connecting')) ? (
                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay />
             ): (
                 <div className="flex-1 flex flex-col items-center justify-center bg-gray-800">
@@ -133,7 +133,7 @@ export default function CallPage() {
                 </div>
             )}
             
-            {!hasCameraPermission && callDetails.type === 'video' && callDetails.status === 'connected' && (
+            {!hasCameraPermission && callDetails.type === 'video' && (callDetails.status === 'connected' || callDetails.status === 'connecting') && (
                 <div className="absolute top-4 left-4 right-4">
                     <Alert variant="destructive">
                       <AlertTitle>Camera Access Required</AlertTitle>

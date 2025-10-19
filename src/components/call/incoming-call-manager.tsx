@@ -14,7 +14,7 @@ type CallDetails = {
     id: string;
     type: 'audio' | 'video';
     caller: { uid: string; displayName: string; avatarUrl: string };
-    status: 'initiating' | 'ringing' | 'connected' | 'ended' | 'rejected' | 'missed';
+    status: 'initiating' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'rejected' | 'missed';
 };
 
 export default function IncomingCallManager() {
@@ -51,7 +51,7 @@ export default function IncomingCallManager() {
     if (!incomingCall || !appUser) return;
     const callId = incomingCall.id;
     
-    update(ref(db, `calls/${callId}`), { status: 'connected' });
+    update(ref(db, `calls/${callId}`), { status: 'connecting' });
     
     const historyRef = ref(db, `callHistory/${appUser.uid}/${callId}`);
     update(historyRef, { status: 'answered', date: Date.now() });
